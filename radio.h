@@ -9,7 +9,12 @@
 
 #include "errors.h"
 
-#define FRAME_PAYLOAD_SIZE     72
+#define PREAMBLE                10
+#define MAGICKEY                 4
+#define HEADER                   6
+#define PAYLOAD                 72
+#define CKECKSUM                 2
+#define FRAME_PAYLOAD_SIZE     184
 
 int radio_init(int addr);
 

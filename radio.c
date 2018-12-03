@@ -17,7 +17,7 @@
 
 int sock, recv_len, s_len;    // UDP Socket used by this node
 
-#define BUFLEN 72
+#define FRAME_PAYLOAD_SIZE 188
 
 void die(char *s)
 {
@@ -65,8 +65,8 @@ int radio_send(int  dst, char* data, int len) {
         printf("%s\n", "Wrong address, must be 1024 to 49151!");
         exit(0);
     }
-    if(BUFLEN < len){
-        printf("%s\n", "Data size is too big, must be blow %d!", BUFLEN);
+    if(FRAME_PAYLOAD_SIZE < len){
+        printf("%s\n", "Data size is too big, must be blow %d!", FRAME_PAYLOAD_SIZE);
         exit(1);
     }
 
@@ -104,7 +104,7 @@ int radio_recv(int* src, char* data, int to_ms) {
     // First poll/select with timeout (may be skipped at first)
 
     // Receive packet/data
-    if(len = recvfrom(sock, data, BUFLEN, 0, (struct sockaddr *) &sa, &s_len) == -1){
+    if(len = recvfrom(sock, data, FRAME_PAYLOAD_SIZE, 0, (struct sockaddr *) &sa, &s_len) == -1){
         die("recvfrom");
     }
     // Set source from address structure
