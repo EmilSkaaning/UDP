@@ -17,8 +17,6 @@
 
 int sock, recv_len, s_len;    // UDP Socket used by this node
 
-#define FRAME_PAYLOAD_SIZE 188
-
 void die(char *s)
 {
         perror(s);
@@ -62,11 +60,11 @@ int radio_send(int  dst, char* data, int len) {
 
     // Check that port and len are valid
     if(1024 > dst || dst > 49151){
-        printf("%s\n", "Wrong address, must be 1024 to 49151!");
+        printf("Wrong address, must be 1024 to 49151! Address was: %d\n", dst);
         exit(0);
     }
     if(FRAME_PAYLOAD_SIZE < len){
-        printf("%s\n", "Data size is too big, must be blow %d!", FRAME_PAYLOAD_SIZE);
+        printf("Data size is too big, must be below %d!\n", FRAME_PAYLOAD_SIZE);
         exit(1);
     }
 
@@ -108,7 +106,7 @@ int radio_recv(int* src, char* data, int to_ms) {
         die("recvfrom");
     }
     // Set source from address structure
-    // *src = ntohs(sa.sin_port);
+    *src = ntohs(sa.sin_port);
 
 
 
