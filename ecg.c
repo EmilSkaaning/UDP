@@ -39,15 +39,16 @@ int main(){
 	    char buf_s[FRAME_PAYLOAD_SIZE + 1];		
 		char header[13]; 	    	
 		char sender = 'i';
-
+		//long int payload;
 		char *payload = (char*) malloc(144);
+		char *hex_payload = (char*) malloc(144);
 		char *pre = (char*) malloc(20);
 		char *magickey = (char*) malloc(8);
 		char *hex_sum = (char*) malloc(8);
 		char *hex_id = (char*) malloc(1);
 		char *hex_flag = (char*) malloc(1);
         char *ph = (char*) malloc(1);
-		int checksum, id, flag, flag_rec, flag_data;
+		int checksum, id, flag, flag_rec;
 		while(1){
 
 			switch(sender){
@@ -56,11 +57,11 @@ int main(){
 					memset((char *) &data_s, 0 , FRAME_PAYLOAD_SIZE);
 
 					// Payload
-
 			        printf("Type the payload (integer):\n");
 			        scanf("%s",payload); 
-			        // printf("payload: %s\n", payload);
-
+			        printf("payload: %s\n", payload);
+			        //int test = strtol(payload,NULL,10));
+					//printf("jajaja: %d\n", test);
 					sender = 's';
 					break;
 
@@ -69,12 +70,12 @@ int main(){
 
 
 					// preamble for the data_sframe
-
-				    pre = "AAAAAAAAAAAAAAAAAAAA";
+					strcpy(pre, "AAAAAAAAAAAAAAAAAAAA");
+				    //pre = "AAAAAAAAAAAAAAAAAAAA";
 				    strcpy(data_s, pre);
 			   
-
-			        magickey = "1337F542";
+				    strcpy(magickey, "13379542");
+			        //magickey = "13379542";
 			        strcat(data_s, magickey);
 			   
 			        // Header
@@ -109,29 +110,7 @@ int main(){
 	
 			        sender = 'w';
 			        break;
-/*	     		    
-		            if ( (len=radio_recv(&source, buf_s, TIMEOUT_SEC * 1000)) < 0) {
-			            if (len == ERR_TIMEOUT) {
-			                printf("radio_recv timed out\n");
-			                continue;
-			            }
-		            printf("radio_recv failed with %d\n", len);
-		            return 1;
-	       			}			 		
 
-					printf("Buf_s: %s \n", buf_s);
-
-			        strncpy(ph, buf_s+39, 1);  
-			        flag = atoi(ph);      		 
-
-			        if (flag == 4){
-			        	sender ='d';
-			        	printf("Ack recieved sending data\n");
-			        }
-			        else{
-			        	break;
-			        }
-*/
 				case 'd':
 					printf("case (send): send payload\n");
 
@@ -160,6 +139,8 @@ int main(){
 			        // printf("flag: %s\n", header);
 	     		    
 			        strcat(data_s, header);
+
+			        //sprintf(hex_payload, "%x", payload);
 			        strcat(data_s, payload);
 			        //printf("data_s: %s\n", data_s);
 
@@ -190,7 +171,7 @@ int main(){
 			        strncpy(ph, buf_s+39, 1);  
 			        flag_rec = atoi(ph);      		 
 
-			        printf("flag: %d, flag_rec: %d, flag_data: %d \n", flag, flag_rec, flag_data);
+			        printf("flag: %d, flag_rec: %d\n", flag, flag_rec);
 			        if (flag == 8 && flag_rec == 4){
 			        	sender ='d';
 			        	printf("Ack recieved sending data\n");
@@ -213,11 +194,12 @@ int main(){
 					memset((char *) &data_s, 0 , FRAME_PAYLOAD_SIZE);
 					// preamble for the data_sframe
 
-				    pre = "AAAAAAAAAAAAAAAAAAAA";
+					strcpy(pre, "AAAAAAAAAAAAAAAAAAAA");
+				    //pre = "AAAAAAAAAAAAAAAAAAAA";
 				    strcpy(data_s, pre);
 			   
-
-			        magickey = "1337F542";
+				    strcpy(magickey, "13379542");
+			        //magickey = "13379542";
 			        strcat(data_s, magickey);
 			   
 			        // Header
@@ -260,7 +242,7 @@ int main(){
 		char reciever = 'r';
 	    char buf_r[FRAME_PAYLOAD_SIZE + 1];
  		char data_r[FRAME_PAYLOAD_SIZE];
- 		int err, len, source, flag_int, flag_rec, checksum_int, id_int;
+ 		int err, len, source, flag_int, flag_rec, checksum_int, id_int, number;
         char *preamble = (char*) malloc(20); 
         char *magickey = (char*) malloc(8);
 		char *magickey_data = (char*) malloc(8);  
@@ -277,8 +259,7 @@ int main(){
 		while(1){
 			switch(reciever){
 				case 'r':  // Ready
-					memset((char *) buf_r, 0, FRAME_PAYLOAD_SIZE+1);
-					printf("case (rec): ready\n");
+					printf("case (rec): ready\n");	
 		            if ( (len=radio_recv(&source, buf_r, TIMEOUT_SEC * 1000)) < 0) {
 			            if (len == ERR_TIMEOUT) {
 			                printf("radio_recv timed out\n");
@@ -319,7 +300,7 @@ int main(){
 			        // printf("Received flag: %s\n", flag);        
 
 			        flag_rec = atoi(flag);
-
+			        printf("flag_rec: %d\n", flag_rec);
 			        if (flag_rec == 8 || flag_rec == 2){
 			        	reciever = 'a';
 			        }
@@ -338,7 +319,8 @@ int main(){
 
 				    strcpy(data_r, preamble);
 
-			        magickey = "1337F541";
+				    strcpy(magickey, "13372541");
+			        //magickey = "13372541";
 			        strcat(data_r, magickey);	
 
 			        // Header 
@@ -356,6 +338,7 @@ int main(){
 			        strcat(header, hex_id);
 			        // printf("id: %s\n", header);
 			        printf("flag_rec %d\n", flag_rec);
+			        printf("%d\n", (flag_rec == 0));
 			        if (flag_rec == 8){
 	     		   		reciever = 'd';
 			        }
@@ -421,18 +404,22 @@ int main(){
 			        // printf("Received flag: %s\n", flag);       
 			        flag_rec = atoi(flag);
 
+					number = (int)strtol(pay_len, NULL, 16);
+
 					strncpy(pakage, buf_r+40, 144);
 					printf("flag_rec: %d\n", flag_rec);
-					if (atoi(pay_len) == strlen(pakage) && flag_rec == 0){
+					if (number == strlen(pakage) && flag_rec == 0){
 						printf("All data recieved: %s\n", pakage);
 						reciever = 'a';
 					}
-					else if (atoi(pay_len) == strlen(pakage) && flag_rec == 2){
+
+					else if (number == strlen(pakage) && flag_rec == 2){
 						printf("All data recieved: %s\n", pakage);
 						reciever = 't';
 					}
 
 					break;
+
 				case 'w':
 					printf("%s\n", "Waiting for termination");
 
@@ -479,6 +466,18 @@ int main(){
 
 				case 't':
 					printf("%s\n", "Det var det ");
+					
+					memset((char *) buf_r, 0, FRAME_PAYLOAD_SIZE+1);
+					memset((char *) data_r, 0, FRAME_PAYLOAD_SIZE);
+					memset((char *) preamble, 0, 20);
+					memset((char *) magickey, 0, 8);
+					memset((char *) header, 0, 12);
+					memset((char *) pay_len, 0, 2);
+					memset((char *) checksum, 0, 8);
+					memset((char *) id, 0, 1);
+					memset((char *) flag, 0, 1);
+					
+					printf("%s\n", magickey);
 					reciever = 'r';
 					break;
 
