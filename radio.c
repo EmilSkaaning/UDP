@@ -14,13 +14,27 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <time.h>
 
 int sock, recv_len, s_len;    // UDP Socket used by this node
 
-void die(char *s)
-{
-        perror(s);
-        exit(1);
+void sleep(int milisec){
+	struct timespec res;
+	res.tv_sec = milisec/1000;
+	res.tv_nsec = (milisec*1000000) % 1000000000;
+	clock_nanosleep(CLOCK_MONOTONIC, 0, &res, NULL);
+}
+
+int magickey_gen() {
+   time_t t;
+   srand((unsigned) time(&t));
+   int test = (rand() % 4294967295);
+   return test;
+}
+
+void die(char *s){
+    perror(s);
+    exit(1);
 }
 
 int radio_init(int addr) {
@@ -54,8 +68,9 @@ int radio_init(int addr) {
     return ERR_OK;
 }
 
-int radio_send(int  dst, char* data, int len) {
-
+int radio_send(int  dst, char* data, int len){
+	int sleeping = (len / 2.4);
+	// printf("Sleep in ms: %d\n", sleeping);
     struct sockaddr_in sa;   // Structure to hold destination address
 
     // Check that port and len are valid
@@ -69,6 +84,8 @@ int radio_send(int  dst, char* data, int len) {
     }
 
     // Emulate transmission time
+	sleep(sleeping);
+
 
     // Prepare address structure
     memset((char *) &sa, 0, sizeof(sa));
@@ -100,6 +117,12 @@ int radio_recv(int* src, char* data, int to_ms) {
 
 
     // First poll/select with timeout (may be skipped at first)
+	struct timeval tv;
+    tv.tv_sec = to_ms;
+    tv.tv_usec = 0;
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+        perror("Error");
+    }
 
     // Receive packet/data
     if(len = recvfrom(sock, data, FRAME_PAYLOAD_SIZE, 0, (struct sockaddr *) &sa, &s_len) == -1){
@@ -112,4 +135,5 @@ int radio_recv(int* src, char* data, int to_ms) {
 
     return len;
 }
+
 

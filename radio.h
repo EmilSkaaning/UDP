@@ -22,4 +22,6 @@ int radio_send(int  dst, char* data, int len);
 
 int radio_recv(int* src, char* data, int to_ms);
 
+int magickey_gen();
+
 #endif // _RADIO_H_
