@@ -11,8 +11,9 @@
 int snd_addr = 2132;
 int rcv_addr = 2135;
 
-int checksum_fail = 1;
+int checksum_fail = 0;
 int payload_len_fail = 0;
+int no_packages = 2;
 
 int main(){
     int err, last, addr, len, source;
@@ -108,7 +109,7 @@ int main(){
 			        // printf("flag: %s\n", header);
 			   
 			        strcat(data_s, header);
-
+			        sprintf(data_s+40, "%02x", no_packages);
 				    // CHECKSUM TESTING //
 			   		printf("%s\n", data_s);
 			        checksum = 0;
@@ -130,6 +131,7 @@ int main(){
 			        strcat(header, hex_id);		   
 			        strcat(header, hex_flag);
 			        strcat(data_s, header);
+			        sprintf(data_s+40, "%02x", no_packages);
 			   	
 			   		//////////////////////
 
@@ -359,7 +361,7 @@ int main(){
 		char reciever = 'r';
 	    char buf_r[FRAME_PAYLOAD_SIZE + 1];
  		char data_r[FRAME_PAYLOAD_SIZE];
- 		int err, len, source, flag_int, flag_rec, id_int, number, magic_check, ack_count, checksum, error_resend;
+ 		int err, len, source, flag_int, flag_rec, id_int, number, magic_check, ack_count, checksum, error_resend, pakage_nr_int;
         char *preamble = (char*) malloc(20); 
         char *magickey = (char*) malloc(8);
 		char *magickey_data = (char*) malloc(8);  
@@ -373,7 +375,8 @@ int main(){
 		char *hex_sum = (char*) malloc(8);
 		char *hex_id = (char*) malloc(1);
 		char *hex_flag = (char*) malloc(1);
-		char *sum = (char*) malloc(8);		
+		char *sum = (char*) malloc(8);
+		char *pakage_nr = (char*) malloc(2);		
 		while(1){
 			switch(reciever){
 				case 'r':  // Ready
@@ -424,6 +427,9 @@ int main(){
 			        strncpy(flag, header+11, 1);        
 			        // printf("Received flag: %s\n", flag);        
 
+			        strncpy(pakage_nr, buf_r+40, 2);
+			        pakage_nr_int = atoi(pakage_nr);
+
 			        // check checksum
 			        checksum = 0;
 			        printf("%s\n", buf_r);
@@ -436,7 +442,7 @@ int main(){
 				    checksum = checksum + (8 * 48);
 
 					sprintf(sum, "%08x", checksum);
-					error_resend = strcmp(sum, com_checksum);
+					error_resend = strcmp(sum,com_checksum);
 				    if (error_resend == 0){
 				    	printf("%s\n", "Checksum match\n");
 				    }
@@ -460,7 +466,7 @@ int main(){
 			        char *pakage = (char*) malloc(144); 
 			        strncpy(pakage, buf_r+40, 144); */
 			        //printf("Received pakage (int): %s\n", pakage);
-				case 'a': // Acknowledgement
+				case 'a': // Acknowledgemenpakage_nr_intt
 					printf("case (rec): acknowledgement\n");
 					// preamble for the data_sframe
 
@@ -542,74 +548,76 @@ int main(){
 				case 'd':
 					ack_count = 0;
 					memset((char *) buf_r, 0, FRAME_PAYLOAD_SIZE+1);
+			        for(int i = 1; i <= pakage_nr_int; i++){
+			        	printf("HEEY: %d\n", i);
+				        
+						printf("case (rec): recieve data\n");
+			            if ( (len=radio_recv(&source, buf_r, TIMEOUT_SEC * 1000)) < 0) {
+				            if (len == ERR_TIMEOUT){
+				                printf("radio_recv timed out\n");
+				                continue;
+				            }
+			            printf("radio_recv failed with %d\n", len);
+			            return 1;
+		       			}
 
-					printf("case (rec): recieve data\n");
-		            if ( (len=radio_recv(&source, buf_r, TIMEOUT_SEC * 1000)) < 0) {
-			            if (len == ERR_TIMEOUT){
-			                printf("radio_recv timed out\n");
-			                continue;
-			            }
-		            printf("radio_recv failed with %d\n", len);
-		            return 1;
-	       			}
-
-	       			printf("Received data: %s\n", buf_r);
+		       			printf("Received data: %s\n", buf_r);
 
 
-			        strncpy(preamble, buf_r, 20);
-			        // printf("Received preamble (hex): %s\n", preamble);
+				        strncpy(preamble, buf_r, 20);
+				        // printf("Received preamble (hex): %s\n", preamble);
 
-      				strncpy(magickey_data, buf_r+20, 8);
-			        
-			        magic_check = strcmp(magickey_data, magickey);
-			        if (magic_check != 0 && ack_count <= 5){
-			        	printf("Wrong magickey! Trying to connect again.\n");
-			        	reciever = 'd';
-			        	ack_count++;
-			        	break;
-			        }
-			        else if (magic_check != 0 && ack_count > 5){
-			        	printf("Could not find cleint. Returning to Idle state!\n");
-			        	reciever = 't';
-			        	break;
-			        }
+	      				strncpy(magickey_data, buf_r+20, 8);
+				        
+				        magic_check = strcmp(magickey_data, magickey);
+				        if (magic_check != 0 && ack_count <= 5){
+				        	printf("Wrong magickey! Trying to connect again.\n");
+				        	reciever = 'd';
+				        	ack_count++;
+				        	break;
+				        }
+				        else if (magic_check != 0 && ack_count > 5){
+				        	printf("Could not find cleint. Returning to Idle state!\n");
+				        	reciever = 't';
+				        	break;
+				        }
 
-			        // printf("Received magickey (hex): %s\n", magickey);
+				        // printf("Received magickey (hex): %s\n", magickey);
 
-			        strncpy(header, buf_r+28, 12);
-			        // printf("Received header (hex): %s\n", header);
+				        strncpy(header, buf_r+28, 12);
+				        // printf("Received header (hex): %s\n", header);
 
-			        strncpy(pay_len, header, 2);
-			        // printf("Received pay_len : %s\n", pay_len);
+				        strncpy(pay_len, header, 2);
+				        // printf("Received pay_len : %s\n", pay_len);
 
-			        strncpy(com_checksum, header+2, 8);
-			        // printf("Received checksum (hex): %s\n", checksum);
+				        strncpy(com_checksum, header+2, 8);
+				        // printf("Received checksum (hex): %s\n", checksum);
 
-			        strncpy(id, header+10, 1);
-			        // printf("Received id: %s\n", id);
+				        strncpy(id, header+10, 1);
+				        // printf("Received id: %s\n", id);
 
-			        strncpy(flag, header+11, 1);        
-			        // printf("Received flag: %s\n", flag);       
-			        
-			        // check checksum
-			        checksum = 0;
-			        printf("%s\n", buf_r);
-				    for(int i = 0; i < 30; i++){
-				    	checksum = checksum + buf_r[i];
-				    }
-				    for(int i = 38; i < strlen(buf_r); i++){
-				    	checksum = checksum + buf_r[i];
-				    }			
+				        strncpy(flag, header+11, 1);        
+				        // printf("Received flag: %s\n", flag);       
+				        
+				        // check checksum
+				        checksum = 0;
+				        printf("%s\n", buf_r);
+					    for(int i = 0; i < 30; i++){
+					    	checksum = checksum + buf_r[i];
+					    }
+					    for(int i = 38; i < strlen(buf_r); i++){
+					    	checksum = checksum + buf_r[i];
+					    }			
 
-				    if (checksum_fail == 1){
-				     	checksum = 9;
-				     	checksum_fail++;
-				    }
-				    else{
-				    	checksum = checksum + (8 * 48); 
-				    }
-				    //fail++;
-
+					    if (checksum_fail == 1){
+					     	checksum = 9;
+					     	checksum_fail++;
+					    }
+					    else{
+					    	checksum = checksum + (8 * 48); 
+					    }
+					    //fail++;
+					}
 					sprintf(sum, "%08x", checksum);
 
 					error_resend = strcmp(sum, com_checksum);
